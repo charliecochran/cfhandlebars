@@ -69,8 +69,8 @@ inverseAndProgram
 
 inverseChain
   : openInverseChain program inverseChain? {
-    var inverse = yy.prepareBlock($1, $2, $3, $3, false, @$),
-        program = yy.prepareProgram([inverse], $2.loc);
+    var inverse = yy.prepareBlock($1, $2, $3, $3, false, @$);
+    var program = yy.prepareProgram([inverse], $2.loc);
     program.chained = true;
 
     $$ = { strip: $1.strip, program: program, chain: true };
@@ -142,9 +142,11 @@ helperName
   | dataName -> $1
   | STRING -> {type: 'StringLiteral', value: $1, original: $1, loc: yy.locInfo(@$)}
   | NUMBER -> {type: 'NumberLiteral', value: Number($1), original: Number($1), loc: yy.locInfo(@$)}
-  | BOOLEAN -> {type: 'BooleanLiteral', value: $1 === 'true', original: $1 === 'true', loc: yy.locInfo(@$)}
-  | UNDEFINED -> {type: 'UndefinedLiteral', original: undefined, value: undefined, loc: yy.locInfo(@$)}
-  | NULL -> {type: 'NullLiteral', original: null, value: null, loc: yy.locInfo(@$)}
+  | BOOLEAN -> {type: 'BooleanLiteral', value: $1 == 'true', original: $1 == 'true', loc: yy.locInfo(@$)}
+  // Try removing value and original keys to simulate undefined values?
+  | UNDEFINED -> {type: 'UndefinedLiteral', loc: yy.locInfo(@$)}
+  // Try using java null here since CF doesn't have built in null?
+  | NULL -> {type: 'NullLiteral', original: javaCast("null", 0), value: javaCast("null", 0), loc: yy.locInfo(@$)}
   ;
 
 partialName
@@ -161,6 +163,6 @@ path
   ;
 
 pathSegments
-  : pathSegments SEP ID { $1.push({part: yy.id($3), original: $3, separator: $2}); $$ = $1; }
+  : pathSegments SEP ID { $1.append({part: yy.id($3), original: $3, separator: $2}); $$ = $1; }
   | ID -> [{part: yy.id($1), original: $1}]
   ;
