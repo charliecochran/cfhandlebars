@@ -4,7 +4,7 @@
   "description": "ColdFusion port of handlebars.js",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "jison": "node_modules/.bin/jison.cmd -m js src/handlebars.yy src/handlebars.l"
   },
   "repository": {
     "type": "git",
