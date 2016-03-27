@@ -1,0 +1,26 @@
+{
+  "name": "cfhandlebars",
+  "version": "1.0.0",
+  "description": "ColdFusion port of handlebars.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/charliecochran/cfhandlebars.git"
+  },
+  "keywords": [
+    "handlebars",
+    "coldfusion"
+  ],
+  "author": "Charlie Cochran",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/charliecochran/cfhandlebars/issues"
+  },
+  "homepage": "https://github.com/charliecochran/cfhandlebars#readme",
+  "devDependencies": {
+    "jison": "^0.4.17"
+  }
+}
