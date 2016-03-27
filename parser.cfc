@@ -27,8 +27,9 @@ component {
   * @$$ vstack 
   * @_$ lstack
   */
-  public function performAction(yytext, yyleng, yylineno, yy, yystate /* action[1] */, $$ /* vstack */, _$ /* lstack */) {
+  public function performAction(yyval, yytext, yyleng, yylineno, yy, yystate, $$, _$) {
     // INSERT performAction switch statement here
+    // TODO replace "this." with "yyval." when inserting since we can't use function context binding in CF
   }
 
 
