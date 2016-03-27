@@ -32,5 +32,12 @@ component {
     // TODO replace "this." with "yyval." when inserting since we can't use function context binding in CF
   }
 
+  public function parseError(str, hash) {
+    if (hash.recoverable) {
+      this.trace(str);
+    } else {
+      throw(message=msg, detail=hash, type="ParseError");
+    }
+  }
 
 }
