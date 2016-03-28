@@ -1,5 +1,8 @@
 component {
 
+  null = function() { return; };
+  br = CreateObject("java", "java.lang.System").getProperty("line.separator");
+
   o = function(k,v,o={}) {
     for(var l = ArrayLen(k); --l; o[k[l]]=v);
     return o;
@@ -44,7 +47,7 @@ component {
   public function parse(input) {
     var stack = [0];
     var tstack = [];
-    var vstack = [null];
+    var vstack = [null()];
     var lstack = [];
     var yytext = '';
     var yylineno = 0;
@@ -84,102 +87,117 @@ component {
       return token;
     };
 
-    // TODO: translate rest of this function
-    var symbol, preErrorSymbol, state, action, a, r, yyval = {}, p, len, newState, expected;
+    var symbol = null();
+    var preErrorSymbol = null();
+    var state = null();
+    var action = null();
+    var a = null();
+    var r = null();
+    var yyval = {};
+    var p = null();
+    var len = null();
+    var newState = null();
+    var expected = null();
+
     while (true) {
-      state = stack[stack.length - 1];
-      if (this.defaultActions[state]) {
+      state = stack[stack.len()];
+      if (this.defaultActions.keyExists(state)) {
         action = this.defaultActions[state];
       } else {
-        if (symbol === null || typeof symbol == 'undefined') {
+        if (!isDefined('symbol')) {
           symbol = lex();
         }
-        action = this.table[state] && this.table[state][symbol];
+        if(isDefined('state') && isDefined('this.table[#state#]') && isDefined('symbol') && isDefined('this.table[#state#][#symbol#]')) {
+          action = this.table[state][symbol];
+        }
       }
-            if (typeof action === 'undefined' || !action.length || !action[0]) {
+      if (!isDefined('action') || !isArray(action) || !action.len()) {
           var errStr = '';
+          var symbolStr = isDefined('symbol') ? (this.terminals_.keyExists(symbol) ? this.terminals_[symbol] : symbol) : '';
           expected = [];
           for (p in this.table[state]) {
-            if (this.terminals_[p] && p > TERROR) {
-              expected.append('\'' + this.terminals_[p] + '\'');
+            if (this.terminals_.keyExists(p) && p > TERROR) {
+              expected.append("'#this.terminals_[p]#'");
             }
           }
           if (lexer.showPosition) {
-            errStr = 'Parse error on line ' + (yylineno + 1) + ':\n' + lexer.showPosition() + '\nExpecting ' + expected.join(', ') + ', got \'' + (this.terminals_[symbol] || symbol) + '\'';
+            errStr = "Parse error on line #(yylineno + 1)#:#br##lexer.showPosition()##br#Expecting #arrayToList(expected, ', ')#, got '#symbolStr#'";
           } else {
-            errStr = 'Parse error on line ' + (yylineno + 1) + ': Unexpected ' + (symbol == EOF ? 'end of input' : '\'' + (this.terminals_[symbol] || symbol) + '\'');
+            errStr = 'Parse error on line #(yylineno + 1)#: Unexpected ' & (isDefined('symbol') && symbol == EOF ? 'end of input' : "'#symbolStr#'");
           }
           this.parseError(errStr, {
             text: lexer.match,
-            token: this.terminals_[symbol] || symbol,
+            token: symbolStr,
             line: lexer.yylineno,
             loc: yyloc,
             expected: expected
           });
         }
-      if (action[0] instanceof Array && action.length > 1) {
-        throw new Error('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+// TODO: translate rest of this function
+      if (isArray(action[1]) && action.len() > 1) {
+        throw('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
       }
       switch (action[0]) {
-      case 1:
-        stack.append(symbol);
-        vstack.append(lexer.yytext);
-        lstack.append(lexer.yylloc);
-        stack.append(action[1]);
-        symbol = null;
-        if (!preErrorSymbol) {
-          yyleng = lexer.yyleng;
-          yytext = lexer.yytext;
-          yylineno = lexer.yylineno;
-          yyloc = lexer.yylloc;
-          if (recovering > 0) {
-            recovering--;
+        case 1:
+          stack.append(symbol);
+          vstack.append(lexer.yytext);
+          lstack.append(lexer.yylloc);
+          stack.append(action[1]);
+          symbol = null();
+          preErrorSymbol = true;
+          if (!preErrorSymbol) {
+            yyleng = lexer.yyleng;
+            yytext = lexer.yytext;
+            yylineno = lexer.yylineno;
+            yyloc = lexer.yylloc;
+            if (recovering > 0) {
+              recovering--;
+            }
+          } else {
+            symbol = preErrorSymbol;
+            preErrorSymbol = null;
           }
-        } else {
-          symbol = preErrorSymbol;
-          preErrorSymbol = null;
-        }
-        break;
-      case 2:
-        len = this.productions_[action[1]][1];
-        yyval.$ = vstack[vstack.length - len];
-        yyval._$ = {
-          first_line: lstack[lstack.length - (len || 1)].first_line,
-          last_line: lstack[lstack.length - 1].last_line,
-          first_column: lstack[lstack.length - (len || 1)].first_column,
-          last_column: lstack[lstack.length - 1].last_column
-        };
-        if (isDefined(ranges)) {
-          yyval._$.range = [
-            lstack[lstack.length - (len || 1)].range[0],
-            lstack[lstack.length - 1].range[1]
-          ];
-        }
-        r = this.performAction.apply(yyval, [
-          yytext,
-          yyleng,
-          yylineno,
-          sharedState.yy,
-          action[1],
-          vstack,
-          lstack
-        ].concat(args));
-        if (typeof r !== 'undefined') {
-          return r;
-        }
-        if (len) {
-          stack = stack.slice(0, -1 * len * 2);
-          vstack = vstack.slice(0, -1 * len);
-          lstack = lstack.slice(0, -1 * len);
-        }
-        stack.append(this.productions_[action[1]][0]);
-        vstack.append(yyval.$);
-        lstack.append(yyval._$);
-        newState = this.table[stack[stack.length - 2]][stack[stack.length - 1]];
-        stack.append(newState);
-        break;
-      case 3:
-        return true;
+          break;
+        case 2:
+          len = this.productions_[action[1]][1];
+          yyval.$ = vstack[vstack.length - len];
+          yyval._$ = {
+            first_line: lstack[lstack.length - (len || 1)].first_line,
+            last_line: lstack[lstack.length - 1].last_line,
+            first_column: lstack[lstack.length - (len || 1)].first_column,
+            last_column: lstack[lstack.length - 1].last_column
+          };
+          if (isDefined(ranges)) {
+            yyval._$.range = [
+              lstack[lstack.length - (len || 1)].range[0],
+              lstack[lstack.length - 1].range[1]
+            ];
+          }
+          r = this.performAction.apply(yyval, [
+            yytext,
+            yyleng,
+            yylineno,
+            sharedState.yy,
+            action[1],
+            vstack,
+            lstack
+          ].concat(args));
+          if (typeof r !== 'undefined') {
+            return r;
+          }
+          if (len) {
+            stack = stack.slice(0, -1 * len * 2);
+            vstack = vstack.slice(0, -1 * len);
+            lstack = lstack.slice(0, -1 * len);
+          }
+          stack.append(this.productions_[action[1]][0]);
+          vstack.append(yyval.$);
+          lstack.append(yyval._$);
+          newState = this.table[stack[stack.length - 2]][stack[stack.length - 1]];
+          stack.append(newState);
+          break;
+        case 3:
+          return true;
       }
     }
     return true;
