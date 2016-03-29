@@ -107,15 +107,15 @@ component {
         if (!isDefined('symbol')) {
           symbol = lex();
         }
-        if(isDefined('state') && isDefined('this.table[#state#]') && isDefined('symbol') && isDefined('this.table[#state#][#symbol#]')) {
-          action = this.table[state][symbol];
+        if(isDefined('state') && isDefined('this.table[#state+1#]') && isDefined('symbol') && isDefined('this.table[#state+1#][#symbol#]')) {
+          action = this.table[state+1][symbol];
         }
       }
       if (!isDefined('action') || !isArray(action) || !action.len()) {
           var errStr = '';
           var symbolStr = isDefined('symbol') ? (this.terminals_.keyExists(symbol) ? this.terminals_[symbol] : symbol) : '';
           expected = [];
-          for (p in this.table[state]) {
+          for (p in this.table[state+1]) {
             if (this.terminals_.keyExists(p) && p > TERROR) {
               expected.append("'#this.terminals_[p]#'");
             }
@@ -133,19 +133,17 @@ component {
             expected: expected
           });
         }
-// TODO: translate rest of this function
       if (isArray(action[1]) && action.len() > 1) {
-        throw('Parse Error: multiple actions possible at state: ' + state + ', token: ' + symbol);
+        throw(message='Parse Error: multiple actions possible at state: #state#, token: #symbol#');
       }
-      switch (action[0]) {
+      switch (action[1]) {
         case 1:
           stack.append(symbol);
           vstack.append(lexer.yytext);
           lstack.append(lexer.yylloc);
-          stack.append(action[1]);
+          stack.append(action[2]);
           symbol = null();
-          preErrorSymbol = true;
-          if (!preErrorSymbol) {
+          if (!isDefined('preErrorSymbol')) {
             yyleng = lexer.yyleng;
             yytext = lexer.yytext;
             yylineno = lexer.yylineno;
@@ -155,45 +153,47 @@ component {
             }
           } else {
             symbol = preErrorSymbol;
-            preErrorSymbol = null;
+            preErrorSymbol = null();
           }
           break;
         case 2:
-          len = this.productions_[action[1]][1];
-          yyval.$ = vstack[vstack.length - len];
+          len = this.productions_[action[1+1]][1+1];
+          yyval.$ = vstack[vstack.len() - len + 1];
           yyval._$ = {
-            first_line: lstack[lstack.length - (len || 1)].first_line,
-            last_line: lstack[lstack.length - 1].last_line,
-            first_column: lstack[lstack.length - (len || 1)].first_column,
-            last_column: lstack[lstack.length - 1].last_column
+            first_line: lstack[lstack.len() - (len || 1) + 1].first_line,
+            last_line: lstack[lstack.len()].last_line,
+            first_column: lstack[lstack.len() - (len || 1) + 1].first_column,
+            last_column: lstack[lstack.len()].last_column
           };
           if (isDefined(ranges)) {
             yyval._$.range = [
-              lstack[lstack.length - (len || 1)].range[0],
-              lstack[lstack.length - 1].range[1]
+              lstack[lstack.len() - (len || 1) + 1].range[1],
+              lstack[lstack.len()].range[2]
             ];
           }
-          r = this.performAction.apply(yyval, [
+          r = this.performAction(
+            yyval,
             yytext,
             yyleng,
             yylineno,
             sharedState.yy,
             action[1],
             vstack,
-            lstack
-          ].concat(args));
-          if (typeof r !== 'undefined') {
+            lstack,
+            args
+          );
+          if (isDefined('r')) {
             return r;
           }
           if (len) {
-            stack = stack.slice(0, -1 * len * 2);
-            vstack = vstack.slice(0, -1 * len);
-            lstack = lstack.slice(0, -1 * len);
+            stack = stack.slice(0, stack.len() - (len * 2));
+            vstack = vstack.slice(0, vstack.len() - len);
+            lstack = lstack.slice(0, lstack.len() - len);
           }
-          stack.append(this.productions_[action[1]][0]);
+          stack.append(this.productions_[action[2]][1]);
           vstack.append(yyval.$);
           lstack.append(yyval._$);
-          newState = this.table[stack[stack.length - 2]][stack[stack.length - 1]];
+          newState = this.table[stack[stack.len() - 1]][stack[stack.len()]];
           stack.append(newState);
           break;
         case 3:
