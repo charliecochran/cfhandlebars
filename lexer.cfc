@@ -59,4 +59,37 @@ component {
     return ch;
   }
 
+  public function unput (ch) {
+    var len = ch.len();
+    var lines = ch.split("(?:\r\n?|\n)");
+
+    this._input = ch & this._input;
+    this.yytext = left(this.yytext, this.yytext.len() - len)
+    this.offset -= len;
+    var oldLines = this.match.split("(?:\r\n?|\n)");
+    this.match = left(this.match, this.match.len() - 1);
+    this.matched = left(this.matched, this.matched.len() - 1);
+
+    if (arrayLen(lines) - 1) {
+      this.yylineno -= arrayLen(lines) - 1;
+    }
+
+    this.yylloc = {
+      first_line: this.yylloc.first_line,
+      last_line: this.yylineno + 1,
+      first_column: this.yylloc.first_column,
+      last_column: arraylen(lines) ?
+        (arrayLen(lines) == arrayLen(oldLines) ? this.yylloc.first_column : 0)
+         + oldLines[arrayLen(oldLines) - arrayLen(lines) + 1]).len() - lines[1].len() :
+        this.yylloc.first_column - len
+    };
+
+    if (isDefined('this.options.ranges') && this.options.ranges) {
+      var r = this.yylloc.range;
+      this.yylloc.range = [r[1], r[1] + this.yyleng - len];
+    }
+    this.yyleng = this.yytext.len();
+    return this;
+  }
+
 }
