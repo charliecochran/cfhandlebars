@@ -5,6 +5,9 @@ component {
 
 	this.EOF = 1;
 
+  // INSERT RULES
+  // INSERT CONDITIONS
+
   public function parseError (str, hash) {
     if (isDefined('this.yy.parser')) {
       this.yy.parser.parseError(str, hash);
@@ -18,7 +21,6 @@ component {
     this.yy = isDefined('arguments.yy') ? arguments.yy : isDefind('this.yy') ? this.yy : {};
     this._input = input;
     this._more = false;
-    this._backtrack = false;
     this.done = false;
     this.yylineno = 0;
     this.yyleng = 0;
@@ -32,9 +34,6 @@ component {
       last_line: 1,
       last_column: 0
     };
-    if (isDefined('this.options.ranges') && this.options.ranges) {
-      this.yylloc.range = [0,0];
-    }
     this.offset = 0;
     return this;
   }
@@ -53,9 +52,6 @@ component {
       this.yylloc.last_line++;
     } else {
       this.yylloc.last_column++;
-    }
-    if (isDefined('this.options.ranges') && this.options.ranges) {
-      this.yylloc.range[2]++;
     }
 
     this._input = removeChars(this._input, 1, 1);
@@ -88,10 +84,6 @@ component {
         this.yylloc.first_column - len
     };
 
-    if (isDefined('this.options.ranges') && this.options.ranges) {
-      var r = this.yylloc.range;
-      this.yylloc.range = [r[1], r[1] + this.yyleng - len];
-    }
     this.yyleng = this.yytext.len();
     return this;
   }
@@ -104,16 +96,11 @@ component {
 
   // When called from action, signals the lexer that this rule fails to match the input, so the next matching rule (regex) should be tested instead.
   public function reject () {
-    if (isDefined('this.options.backtrack_lexer') && this.options.backtrack_lexer) {
-      this._backtrack = true;
-    } else {
-      return this.parseError('Lexical error on line #this.yylineno + 1#. You can only invoke reject() in the lexer when the lexer is of the backtracking persuasion (options.backtrack_lexer = true).#br##this.showPosition()#', {
-        text: "",
-        token: null(),
-        line: this.yylineno
-      });
-    }
-    return this;
+    return this.parseError('Lexical error on line #this.yylineno + 1#.#br##this.showPosition()#', {
+      text: "",
+      token: null(),
+      line: this.yylineno
+    });
   }
 
   // retain first n characters of the match
@@ -146,36 +133,8 @@ component {
   // test the lexed token: return FALSE when not a match, otherwise return token
   public function test_match (match, indexed_rule) {
     var token = null();
-    var lines = null();
-    var backup = null();
+    var lines = reMatch("(?:\r\n?|\n).*", match[1]);
 
-    if (isDefined('this.options.backtrack_lexer') && this.options.backtrack_lexer) {
-      // save context
-      backup = {
-        yylineno: this.yylineno,
-        yylloc: {
-          first_line: this.yylloc.first_line,
-          last_line: this.last_line,
-          first_column: this.yylloc.first_column,
-          last_column: this.yylloc.last_column
-        },
-        yytext: this.yytext,
-        match: this.match,
-        matches: this.matches,
-        matched: this.matched,
-        yyleng: this.yyleng,
-        offset: this.offset,
-        _more: this._more,
-        _input: this._input,
-        yy: this.yy,
-        conditionStack: this.conditionStack,
-        done: this.done
-      };
-      if (isDefined('this.options.ranges') && this.options.ranges) {
-        backup.yylloc.range = this.yylloc.range;
-      }
-    }
-    lines = reMatch("(?:\r\n?|\n).*", match[1]);
     if (lines.len()) {
       this.yylineno += lines.len();
     }
@@ -191,26 +150,15 @@ component {
     this.match &= match[1];
     this.matches = match;
     this.yyleng = this.yytext.len();
-    if (isDefined('this.options.ranges') && this.options.ranges) {
-      this.yylloc.range = [this.offset, this.offset + this.yyleng];
-      this.offset += this.yyleng;
-    }
     this._more = false;
-    this._backtrack = false;
     this._input = right(this._input, this._input.len() - match[1].len());
     this.matched &= match[1];
-    token = this.performAction(this, this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.len()]);
+    token = this.performAction(this.yy, this, indexed_rule, this.conditionStack[this.conditionStack.len()]);
     if (this.done && this._input.len()) {
       this.done = false;
     }
     if (isDefined(token)) {
       return token;
-    } else if (this._backtrack) {
-      // recover context
-      for (var k in backup) {
-        this[k] = backup[k];
-      }
-      return false; // rule action called reject() implying the next rule should be tested instead.
     }
     return false;
   }
@@ -238,20 +186,7 @@ component {
       if (tempMatch.len() && (!isDefined('match') || tempMatch[1].len() > match[1].len())) {
         match = tempMatch;
         index = i;
-        if (isDefined('this.options.backtrack_lexer') && this.options.backtrack_lexer) {
-          token = this.test_match(tempMatch, rules[i]);
-          if (token != false) {
-            return token;
-          } else if (this._backtrack) {
-            match = false;
-            continue; // rule action called reject() implying a rule MISmatch.
-          } else {
-            // else: this is a lexer rule which consumes input without producing a token (e.g. whitespace)
-            return false;
-          }
-        } else if (!isDefined('this.options.flex') || !this.options.flex) {
-          break;
-        }
+        break;
       }
     }
     if (isDefined('match') && match.len()) {
@@ -328,5 +263,17 @@ component {
   public function stateStackSize () {
     return this.conditionStack.len();
   }
+
+  public function performAction (yy,yy_,$avoiding_name_collisions,YY_START) {
+
+    function strip(start, end) {
+      return yy_.yytext = mid(yy_.yytext, start, yy_.yyleng-end);
+    }
+
+    var YYSTATE = YY_START;
+
+    // INSERT BIG SWITCH STATEMENT HERE
+  }
+
 
 }
