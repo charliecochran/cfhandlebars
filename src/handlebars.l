@@ -29,16 +29,18 @@ ID    [^\s!"#%-,\.\/;->@\[-\^`\{-~]+/{LOOKAHEAD}
 %%
 
 [^\x00]*?/("{{")                {
-                                   if(yytext.slice(-2) === "\\\\") {
+                                   if(right(yytext, 2) == "_BACKSLASH__BACKSLASH_") {
                                      strip(0,1);
                                      this.begin("mu");
-                                   } else if(yytext.slice(-1) === "\\") {
+                                   } else if(right(yytext, 1) == "_BACKSLASH_") {
                                      strip(0,1);
                                      this.begin("emu");
                                    } else {
                                      this.begin("mu");
                                    }
-                                   if(yytext) return 'CONTENT';
+                                   if(yytext.len()) {
+                                     return 'CONTENT';
+                                   }
                                  }
 
 [^\x00]+                         return 'CONTENT';
@@ -50,16 +52,19 @@ ID    [^\s!"#%-,\.\/;->@\[-\^`\{-~]+/{LOOKAHEAD}
                                  }
 
 // nested raw block will create stacked 'raw' condition
-<raw>"{{{{"/[^/]                 this.begin('raw'); return 'CONTENT';
+<raw>"{{{{"/[^/]                 {
+                                   this.begin('raw');
+                                   return 'CONTENT';
+                                 }
 <raw>"{{{{/"[^\s!"#%-,\.\/;->@\[-\^`\{-~]+/[=}\s\/.]"}}}}" {
                                   this.popState();
                                   // Should be using `this.topState()` below, but it currently
                                   // returns the second top instead of the first top. Opened an
                                   // issue about it at https://github.com/zaach/jison/issues/291
-                                  if (this.conditionStack[this.conditionStack.length-1] === 'raw') {
+                                  if (this.conditionStack[this.conditionStack.len()] == 'raw') {
                                     return 'CONTENT';
                                   } else {
-                                    yytext = yytext.substr(5, yyleng-9);
+                                    yytext = mid(yytext, 6, yyleng-8);
                                     return 'END_RAW_BLOCK';
                                   }
                                  }
@@ -83,8 +88,14 @@ ID    [^\s!"#%-,\.\/;->@\[-\^`\{-~]+/{LOOKAHEAD}
 <mu>"{{"{LEFT_STRIP}?"#>"        return 'OPEN_PARTIAL_BLOCK';
 <mu>"{{"{LEFT_STRIP}?"#""*"?     return 'OPEN_BLOCK';
 <mu>"{{"{LEFT_STRIP}?"/"         return 'OPEN_ENDBLOCK';
-<mu>"{{"{LEFT_STRIP}?"^"\s*{RIGHT_STRIP}?"}}"        this.popState(); return 'INVERSE';
-<mu>"{{"{LEFT_STRIP}?\s*"else"\s*{RIGHT_STRIP}?"}}"  this.popState(); return 'INVERSE';
+<mu>"{{"{LEFT_STRIP}?"^"\s*{RIGHT_STRIP}?"}}"        {
+  this.popState();
+  return 'INVERSE';
+}
+<mu>"{{"{LEFT_STRIP}?\s*"else"\s*{RIGHT_STRIP}?"}}"  {
+  this.popState();
+  return 'INVERSE';
+}
 <mu>"{{"{LEFT_STRIP}?"^"         return 'OPEN_INVERSE';
 <mu>"{{"{LEFT_STRIP}?\s*"else"   return 'OPEN_INVERSE_CHAIN';
 <mu>"{{"{LEFT_STRIP}?"{"         return 'OPEN_UNESCAPED';
@@ -105,10 +116,22 @@ ID    [^\s!"#%-,\.\/;->@\[-\^`\{-~]+/{LOOKAHEAD}
 <mu>"."/{LOOKAHEAD}              return 'ID';
 <mu>[\/.]                        return 'SEP';
 <mu>\s+                          // ignore whitespace
-<mu>"}"{RIGHT_STRIP}?"}}"        this.popState(); return 'CLOSE_UNESCAPED';
-<mu>{RIGHT_STRIP}?"}}"           this.popState(); return 'CLOSE';
-<mu>'"'("\\"["]|[^"])*'"'        yytext = strip(1,2).replace(/\\"/g,'"'); return 'STRING';
-<mu>"'"("\\"[']|[^'])*"'"        yytext = strip(1,2).replace(/\\'/g,"'"); return 'STRING';
+<mu>"}"{RIGHT_STRIP}?"}}"       {
+                                  this.popState();
+                                  return 'CLOSE_UNESCAPED';
+                                }
+<mu>{RIGHT_STRIP}?"}}"          {
+                                  this.popState();
+                                  return 'CLOSE';
+                                }
+<mu>'"'("\\"["]|[^"])*'"'       {
+                                  yytext = reReplace(strip(1,2), '_BACKSLASH__BACKSLASH_"', '"', 'all');
+                                  return 'STRING';
+                                }
+<mu>"'"("\\"[']|[^'])*"'"       {
+                                  yytext = reReplace(strip(1,2), '_BACKSLASH__BACKSLASH_"', '"', 'all');
+                                  return 'STRING';
+                                }
 <mu>"@"                          return 'DATA';
 <mu>"true"/{LITERAL_LOOKAHEAD}   return 'BOOLEAN';
 <mu>"false"/{LITERAL_LOOKAHEAD}  return 'BOOLEAN';
@@ -120,7 +143,10 @@ ID    [^\s!"#%-,\.\/;->@\[-\^`\{-~]+/{LOOKAHEAD}
 
 <mu>{ID}                         return 'ID';
 
-<mu>'['('\\]'|[^\]])*']'         yytext = yytext.replace(/\\([\\\]])/g,'$1'); return 'ID';
+<mu>'['('\\]'|[^\]])*']'        {
+                                  yytext = reReplace(yytext, "_BACKSLASH__BACKSLASH_([_BACKSLASH__BACKSLASH__BACKSLASH_]])", '$1', '');
+                                  return 'ID';
+                                }
 <mu>.                            return 'INVALID';
 
 <INITIAL,mu><<EOF>>              return 'EOF';
