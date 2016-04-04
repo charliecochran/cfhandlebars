@@ -1,9 +1,9 @@
 component {
 
-	null = function () { return; };
+  null = function () { return; };
   br = CreateObject("java", "java.lang.System").getProperty("line.separator");
 
-	this.EOF = 1;
+  this.EOF = 1;
 
   public function parseError (str, hash) {
     if (isDefined('this.yy.parser')) {
@@ -15,7 +15,7 @@ component {
 
   // resets the lexer, sets new input
   public function setInput (input, yy) {
-    this.yy = isDefined('arguments.yy') ? arguments.yy : isDefind('this.yy') ? this.yy : {};
+    this.yy = isDefined('arguments.yy') ? arguments.yy : (isDefined('this.yy') ? this.yy : {});
     this._input = input;
     this._more = false;
     this._backtrack = false;
@@ -84,7 +84,7 @@ component {
       first_column: this.yylloc.first_column,
       last_column: arraylen(lines) ?
         (arrayLen(lines) == arrayLen(oldLines) ? this.yylloc.first_column : 0)
-         + oldLines[arrayLen(oldLines) - arrayLen(lines) + 1]).len() - lines[1].len() :
+         + oldLines[arrayLen(oldLines) - arrayLen(lines) + 1].len() - lines[1].len() :
         this.yylloc.first_column - len
     };
 
