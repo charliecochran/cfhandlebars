@@ -4,7 +4,8 @@
   "description": "ColdFusion port of handlebars.js",
   "main": "index.js",
   "scripts": {
-    "jison": "node_modules/.bin/jison.cmd -m js src/handlebars.yy src/handlebars.l"
+    "jison": "node_modules/.bin/jison.cmd -m js src/handlebars.yy src/handlebars.l",
+    "build": "npm run jison && node build.js"
   },
   "repository": {
     "type": "git",
