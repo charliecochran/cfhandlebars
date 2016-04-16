@@ -3,17 +3,11 @@ component {
   null = function() { return; };
   br = CreateObject("java", "java.lang.System").getProperty("line.separator");
 
-  o = function(k,v,o={}) {
-    for(var l = ArrayLen(k); --l; o[k[l]]=v);
-    return o;
-  }
-
-  // INSERT variables (except for o function)
-  // INSERT this.symbols_
-  // INSERT this.terminals_
-  // INSERT this.productions_
-  // INSERT this.table
-  // INSERT this.defaultActions
+  this.symbols_ = @@@symbols@@@;
+  this.terminals_ = @@@terminals_@@@;
+  this.productions_ = @@@productions_@@@;
+  this.table = @@@table@@@;
+  this.defaultActions = @@@defaultActions@@@;
 
   public function init(yy = {}) {
     this.yy = arguments.yy;
@@ -32,8 +26,7 @@ component {
   */
   public function performAction(yyval, yytext, yyleng, yylineno, yy, yystate, $$, _$) {
     var $0 = $$.len();
-    // INSERT performAction switch statement here
-    // TODO replace "this." with "yyval." when inserting since we can't use function context binding in CF
+    @@@performAction@@@
   }
 
   public function parseError(str, hash) {

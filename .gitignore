@@ -50,3 +50,4 @@ node_modules/
 handlebars.js
 test.html
 WEB-INF/
+lib/parser.cfc
