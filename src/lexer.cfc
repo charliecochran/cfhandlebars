@@ -5,8 +5,8 @@ component {
 
   this.EOF = 1;
 
-  // INSERT RULES
-  // INSERT CONDITIONS
+  this.rules = @@@rules@@@;
+  this.conditions = @@@conditions@@@;
 
   public function parseError (str, hash) {
     if (isDefined('this.yy.parser')) {
@@ -272,7 +272,7 @@ component {
 
     var YYSTATE = YY_START;
 
-    // INSERT BIG SWITCH STATEMENT HERE
+    @@@performAction@@@
   }
 
 

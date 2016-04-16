@@ -32,14 +32,34 @@ parserCfc = parserCfc.replace('@@@performAction@@@', parserPerformAction);
 // WRITE lib/parser.cfc
 fs.writeFileSync('./lib/parser.cfc', parserCfc);
 
+console.log('Parser built!');
 
 // LEXER STUFF
 
 // READ src/lexer.cfc
+var lexerCfc = fs.readFileSync('./src/lexer.cfc', 'utf-8');
 
-// INSERT rules / replace regexp objects with regexp strings
-// INSERT conditions
-// replace _BACKSLASH_ with \
-// performAction function body
+// Replace regex objects with regex strings
+var rules = Parser.parser.lexer.rules.map(function(rule) {
+  var str = rule.toString();
+  
+  // remove opening and closing slashes
+  // none of the rules have flags so no need to worry about those
+  str = str.substring(1, str.length - 1);
+
+  // adjust for ColdFusion special characters
+  str = str.replace(/#/g, '##');
+
+  return str;
+});
+lexerCfc = lexerCfc.replace('@@@rules@@@', 'deserializeJSON("' + JSON.stringify(rules).replace(/"/g, '""') + '")');
+lexerCfc = lexerCfc.replace('@@@conditions@@@', JSON.stringify(Parser.parser.lexer.conditions));
+
+// INSERT performAction function body (replace _BACKSLASH_ with \)
+var lexerPerformAction = jsFnBody(Parser.parser.lexer.performAction.toString()).replace(/_BACKSLASH_/g, '\\');
+lexerCfc = lexerCfc.replace('@@@performAction@@@', lexerPerformAction);
 
 // WRITE lib/lexer.cfc
+fs.writeFileSync('./lib/lexer.cfc', lexerCfc);
+
+console.log('Lexer built!');
